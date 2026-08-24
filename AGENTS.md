@@ -1,39 +1,54 @@
-# AGENTS.md
+# GARFEX Surface repository
 
-## Project
+## Identity
 
-Pi coding agent extension (`@earendil-works/pi-coding-agent`). Registers a `garfex` command via `.pi/extensions/garfex/index.ts`. Not a standalone app — runs inside the Pi agent runtime.
+This repository owns **GARFEX Surface**: the human-facing experience layer. It is not the GARFEX backend, a business module, an agent Harness, or a Pi extension as its architectural identity. Pi is only the current first host implementation, physically materialized under `.pi/extensions/garfex/`.
 
-## Architecture
+There is no selected technical baseline or repository tooling: no package manifest, compiler configuration, test runner, linter, formatter, build, or CI contract exists here. Do not infer or add one without an explicit decision.
 
-Hexagonal (ports & adapters). Layer boundaries are strict — inner layers never import outer layers.
+## Ownership and dependency direction
 
+```text
+host presentation (currently Pi)
+        ↓
+headless Surface feature experience
+        ↓
+future narrow GARFEX client-facing capability contracts (absent today)
+        ↓
+GARFEX transport/composition edge and backend-owned public contracts
 ```
-domain/          → entities & value types (no imports from other layers)
-application/     → use cases + port interfaces (imports domain only)
-infrastructure/  → repository impls, mock data, external adapters
-ui/              → UiPort interface + PiUiAdapter (bridges Pi's ExtensionCommandContext)
-modules/         → feature controllers that wire UI ↔ use cases
-app/             → composition root (GarfexApp wires everything, MainMenu routes)
-index.ts         → extension entry point, registers the "garfex" command
-```
 
-Dependency direction: `index.ts → app → modules → application → domain`. Infrastructure implements application ports. UI is a port implemented by `PiUiAdapter`.
+- Feature code owns host-neutral interaction intent, projections, and **Interaction State**.
+- Host presentation owns rendering, input mechanisms, accessibility realization, and physical navigation.
+- A future GARFEX client integration may own **Remote State** caching and request lifecycle state.
+- GARFEX backend modules remain authoritative for **Business State**, business rules, authorization, public business errors, and persistence.
+- Semantic navigation intent belongs to headless features; physical navigation belongs to each host.
+- Composition roots only wire concrete pieces.
 
-## Key facts
+Only introduce capability-shaped dependency views when they derive from real GARFEX client-facing contracts. Keep them narrow and feature-oriented. Do not invent a universal `HostPort` or a generic UI port.
 
-- **No build, test, lint, or typecheck tooling** in this repo. The Pi runtime handles compilation.
-- **Single external dependency**: `@earendil-works/pi-coding-agent` (types for `ExtensionAPI`, `ExtensionCommandContext`).
-- **UI strings are in Spanish** — preserve this when extending menus or notifications.
-- **`.atl/`** is gitignored — local skill registry cache, do not commit.
-- **Mock data only** — `InMemoryResourceRepository` is seeded from `resources.mock.ts`. No real backend yet.
-- **Search uses `es-MX` locale** for case-insensitive matching (`toLocaleLowerCase("es-MX")`).
+## Forbidden dependencies and authority
 
-## Adding a new feature module
+Never make the Surface:
 
-1. Define domain types in `domain/<feature>/`
-2. Define port interfaces in `application/ports/`
-3. Implement use cases in `application/use-cases/` (or `application/ports/use-cases/`)
-4. Add infrastructure impls in `infrastructure/`
-5. Create a module controller in `modules/<feature>/` that takes `UiPort` + use cases
-6. Wire it in `app/GarfexApp.ts` constructor and expose via `MainMenu`
+- define or duplicate backend domain entities, business DTO authority, repositories, use cases, business rules, or authorization;
+- import backend module internals, persistence, Convex internals, Temporal internals, Agent Platform internals, or Harness internals;
+- construct or trust `ActorContext`, client-supplied identity, roles, or capabilities;
+- provide fake repositories, mock business results, or a fake GARFEX client capability at runtime;
+- route deterministic CRUD, search, forms, or navigation through an LLM, Harness, or Agent Platform; or
+- make GARFEX modules depend on Pi or any Surface host.
+
+A client-side guard may improve usability but is never authorization. Trusted actor context is server-created and the owning GARFEX module performs final authorization.
+
+## Current Resources limitation
+
+The Resources feature currently models only experience intent and explicitly reports that the GARFEX client capability is unavailable. Resource client contracts and Surface↔GARFEX transport do not exist here yet. Do not add Resource DTOs, backend error replicas, transport adapters, mock results, or direct backend imports to bypass that absence.
+
+## Pi host conventions
+
+- Keep Pi-specific types and runtime calls under `hosts/pi/` (plus the Pi entry point and composition root).
+- Pi presentation invokes headless feature operations and implements physical return/exit behavior itself.
+- Preserve all Pi-visible menu, prompt, and notification strings in Spanish.
+- A future host gets its own presentation; it does not force a universal host abstraction.
+
+Read [`docs/architecture.md`](docs/architecture.md) for materialized code and [`docs/decisions/0001-garfex-surface-foundation.md`](docs/decisions/0001-garfex-surface-foundation.md) for accepted direction and open decisions.

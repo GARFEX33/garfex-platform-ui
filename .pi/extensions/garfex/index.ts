@@ -1,21 +1,16 @@
-// index.ts
+import { createPiSurface } from "./composition/createPiSurface";
+import type { PiCommandContext, PiExtensionApi } from "./hosts/pi/PiRuntime";
 
-import type {
-    ExtensionAPI,
-} from "@earendil-works/pi-coding-agent";
-
-import { GarfexApp } from "./app/GarfexApp";
-import { PiUiAdapter } from "./ui/PiUiAdapter";
-
-export default function garfexExtension(pi: ExtensionAPI): void {
+export default function garfexSurfaceExtension(pi: PiExtensionApi): void {
     pi.registerCommand("garfex", {
         description: "Abrir GARFEX",
+        handler: async (
+            _args: string,
+            context: PiCommandContext,
+        ): Promise<void> => {
+            const surface = createPiSurface(context);
 
-        handler: async (_args, ctx) => {
-            const ui = new PiUiAdapter(ctx);
-            const app = new GarfexApp(ui);
-
-            await app.run();
+            await surface.open();
         },
     });
 }
