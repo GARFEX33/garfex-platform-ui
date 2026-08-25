@@ -89,6 +89,72 @@ test("custom UI failure retains bounded technical diagnostics outside the notice
     );
 });
 
+test("long Error message and stack diagnostics are bounded independently", async () => {
+    const diagnostics: Array<Record<string, unknown>> = [];
+    const longMessage = "message-detail-".repeat(80);
+    const longStack = "stack-frame-detail\n".repeat(200);
+    const failure = new Error(longMessage);
+    failure.stack = longStack;
+
+    const result = await runGarfexCommand(
+        {
+            mode: "tui",
+            hasUI: true,
+            ui: {
+                notify() {},
+                async custom() {
+                    throw failure;
+                },
+            },
+        } as never,
+        (diagnostic) => diagnostics.push(diagnostic),
+    );
+
+    assert.equal(result, "failed");
+    assert.equal(diagnostics.length, 1);
+    assert.equal(diagnostics[0]?.message, longMessage.slice(0, 500));
+    assert.equal((diagnostics[0]?.message as string).length, 500);
+    assert.equal(diagnostics[0]?.stack, longStack.slice(0, 2_000));
+    assert.equal((diagnostics[0]?.stack as string).length, 2_000);
+});
+
+test("an unprintable non-Error thrown value retains a bounded technical fallback", async () => {
+    const notices: string[] = [];
+    const diagnostics: unknown[] = [];
+    const unprintable = {
+        [Symbol.toPrimitive]() {
+            throw new Error("coercion failed");
+        },
+    };
+
+    const result = await runGarfexCommand(
+        {
+            mode: "tui",
+            hasUI: true,
+            ui: {
+                notify(message: string) {
+                    notices.push(message);
+                },
+                async custom() {
+                    throw unprintable;
+                },
+            },
+        } as never,
+        (diagnostic: unknown) => diagnostics.push(diagnostic),
+    );
+
+    assert.equal(result, "failed");
+    assert.deepEqual(diagnostics, [
+        {
+            operation: "open-surface",
+            name: "NonErrorThrow",
+            message: "[unprintable thrown value]",
+        },
+    ]);
+    assert.deepEqual(notices, ["No se pudo abrir GARFEX. Inténtalo de nuevo."]);
+    assert.doesNotMatch(notices.join("\n"), /coercion|unprintable|technical/i);
+});
+
 test("non-Error opening failures normalize safely and sink failures stay contained", async () => {
     const nonErrorNotices: string[] = [];
     const nonErrorDiagnostics: unknown[] = [];

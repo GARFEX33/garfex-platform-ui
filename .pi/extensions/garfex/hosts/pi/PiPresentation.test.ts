@@ -102,6 +102,36 @@ test("reopened search preserves the native Input draft, cursor, and focus", () =
     assert.ok(rendered.includes(CURSOR_MARKER));
 });
 
+test("Search state survives a Home round trip only within its Surface lifetime", () => {
+    const first = createSurface();
+    first.surface.focused = true;
+    first.surface.choose("resources");
+    first.surface.choose("search");
+    first.surface.handleInput("  pieza-ñ 42  ");
+    first.surface.handleInput("\u001b[D");
+    first.surface.handleInput("\u001b[D");
+
+    first.surface.handleInput("\u001b");
+    first.surface.handleInput("\u001b");
+    first.surface.choose("resources");
+    first.surface.choose("search");
+
+    assert.equal(first.surface.searchDraft(), "  pieza-ñ 42  ");
+    assert.ok(first.surface.render(80).join("\n").includes(CURSOR_MARKER));
+    first.surface.handleInput("X");
+    assert.equal(first.surface.searchDraft(), "  pieza-ñ 42X  ");
+
+    first.surface.handleInput("\u001b");
+    first.surface.handleInput("\u001b");
+    first.surface.handleInput("\u001b");
+    assert.equal(first.isClosed(), true);
+
+    const second = createSurface();
+    second.surface.choose("resources");
+    second.surface.choose("search");
+    assert.equal(second.surface.searchDraft(), "");
+});
+
 test("combining Unicode keeps code points and insertion position after Search reopens", () => {
     const { surface } = createSurface();
     surface.focused = true;

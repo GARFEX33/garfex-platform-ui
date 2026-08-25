@@ -126,9 +126,11 @@ This ADR selects no login UX, identity provider, productive authentication strat
 - Real Resource behavior cannot proceed until client-facing contracts and transport are selected and materialized.
 - Multiple state categories and error categories require deliberate mapping at future integration edges.
 - Each host must implement and verify its own physical navigation and accessibility realization.
-- The narrow standard-library architecture checker enforces selected dependency rules, while product package/build/test/lint/CI tooling remains undecided.
+- The narrow standard-library architecture checker enforces selected dependency rules, while broader package/build tooling remains undecided.
 
 ## Open decisions
+
+[ADR 0003](0003-pi-ui-kit-v1.md) resolved only the minimal current baseline: npm metadata, Node `>=22.19`, exact Pi `0.84.2` dependencies, native TypeScript type stripping, and Node's native test runner. Compiler, linter, formatter, bundler, CI, and broader package/build choices remain open.
 
 This ADR deliberately leaves all of the following open:
 
@@ -136,7 +138,7 @@ This ADR deliberately leaves all of the following open:
 - the real Resource client-facing contracts, their DTOs, public errors, capability shape, and versioning;
 - productive authentication strategy, identity provider, session transport, auth/login experience, and account recovery;
 - Web or other host implementation and framework;
-- package manager, runtime baseline, TypeScript configuration, bundler, build, test runner, linting, formatting, and CI;
+- compiler, linter, formatter, bundler, CI, and broader package/build choices beyond ADR 0003's minimal current baseline;
 - Remote State/cache/request library and synchronization policy;
 - forms library, schema/validation library, and contract-driven constraint mechanism;
 - routing/navigation libraries, localization framework, styling/design system, telemetry, logging, and diagnostics;

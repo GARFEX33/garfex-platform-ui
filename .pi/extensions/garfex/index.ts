@@ -19,22 +19,40 @@ export type OpeningFailureDiagnostic = Readonly<{
 
 type OpeningFailureSink = (diagnostic: OpeningFailureDiagnostic) => void;
 
-const MAX_NON_ERROR_MESSAGE_LENGTH = 500;
+const MAX_OPENING_FAILURE_NAME_LENGTH = 100;
+const MAX_OPENING_FAILURE_MESSAGE_LENGTH = 500;
+const MAX_OPENING_FAILURE_STACK_LENGTH = 2_000;
+const UNPRINTABLE_THROWN_VALUE = "[unprintable thrown value]";
+
+function boundedThrownValue(value: unknown): string {
+    try {
+        return String(value).slice(0, MAX_OPENING_FAILURE_MESSAGE_LENGTH);
+    } catch {
+        return UNPRINTABLE_THROWN_VALUE;
+    }
+}
 
 function normalizeOpeningFailure(error: unknown): OpeningFailureDiagnostic {
     if (error instanceof Error) {
         return {
             operation: "open-surface",
-            name: error.name,
-            message: error.message,
-            ...(error.stack === undefined ? {} : { stack: error.stack }),
+            name: error.name.slice(0, MAX_OPENING_FAILURE_NAME_LENGTH),
+            message: error.message.slice(0, MAX_OPENING_FAILURE_MESSAGE_LENGTH),
+            ...(error.stack === undefined
+                ? {}
+                : {
+                      stack: error.stack.slice(
+                          0,
+                          MAX_OPENING_FAILURE_STACK_LENGTH,
+                      ),
+                  }),
         };
     }
 
     return {
         operation: "open-surface",
         name: "NonErrorThrow",
-        message: String(error).slice(0, MAX_NON_ERROR_MESSAGE_LENGTH),
+        message: boundedThrownValue(error),
     };
 }
 
