@@ -242,6 +242,15 @@ test("remapped Pi bindings drive Spanish help without inactive defaults", () => 
     assert.equal(rendered.includes("Esc"), false);
 });
 
+test("remapped DOWN and CONFIRM drive the native selection", () => {
+    const { surface, isClosed } = createSurface(REMAPPED_BINDINGS);
+
+    surface.handleInput("\x1bj");
+    surface.handleInput("\x1b[13;5u");
+
+    assert.equal(isClosed(), true);
+});
+
 test("native selection and Search expose additive textual active cues", () => {
     const { surface } = createSurface();
     const firstHomeRender = surface.render(80).join("\n");

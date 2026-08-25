@@ -11,6 +11,7 @@ import {
     Container,
     Input,
     SelectList,
+    setKeybindings,
     Spacer,
     Text,
     truncateToWidth,
@@ -88,6 +89,7 @@ export class GarfexSurfaceComponent implements Component, Focusable {
         this.theme = privateTheme;
         this.keybindings = privateKeybindings;
         this.done = privateDone;
+        setKeybindings(privateKeybindings);
         this.searchInput.onEscape = () => this.goBack();
         this.rebuild();
     }

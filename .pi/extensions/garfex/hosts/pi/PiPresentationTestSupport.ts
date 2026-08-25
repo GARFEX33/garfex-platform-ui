@@ -5,12 +5,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { KeybindingsManager as CodingAgentKeybindingsManagerValue } from "../../../../../node_modules/@earendil-works/pi-coding-agent/dist/core/keybindings.js";
 import { setKeybindings as setCodingAgentKeybindings } from "../../../../../node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-tui/dist/index.js";
-import {
-    KeybindingsManager as TuiKeybindingsManager,
-    TUI_KEYBINDINGS,
-    setKeybindings as setTuiKeybindings,
-    type TUI,
-} from "@earendil-works/pi-tui";
+import type { TUI } from "@earendil-works/pi-tui";
 
 initTheme("dark", false);
 
@@ -23,9 +18,11 @@ export class FakeTui {
 export const fakeTheme = {
     fg: (_color: string, text: string) => text,
     bold: (text: string) => text,
+    // SAFETY: Presentation tests exercise only these two Theme methods.
 } as unknown as Theme;
 
 export function asTui(tui: FakeTui): TUI {
+    // SAFETY: GarfexSurfaceComponent uses only requestRender and terminal rows.
     return tui as unknown as TUI;
 }
 
@@ -39,11 +36,6 @@ export function createTestKeybindings(
     const codingAgentKeybindings = new CodingAgentKeybindingsManagerValue(
         userBindings,
     );
-    const tuiKeybindings = new TuiKeybindingsManager(
-        TUI_KEYBINDINGS,
-        userBindings,
-    );
-    setTuiKeybindings(tuiKeybindings);
     setCodingAgentKeybindings(codingAgentKeybindings);
     return codingAgentKeybindings;
 }
