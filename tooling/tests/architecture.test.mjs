@@ -26,6 +26,9 @@ const fixtureCases = [
   [RULES.ESCAPING_CONFIG, "escaping-workspace-config"],
   [RULES.GIT_DEPENDENCY, "counterpart-git-dependency"],
   [RULES.HEADLESS_HOST, "headless-host-dependency"],
+  [RULES.HEADLESS_HOST, "surface-pi-dependency"],
+  [RULES.FRONTEND_FRAMEWORK, "frontend-framework-structure"],
+  [RULES.FAKE_EXTERNAL_ARTIFACT, "fake-external-artifact"],
 ];
 
 test("controlled valid fixture permits ordinary external packages and internal paths", async () => {
@@ -122,11 +125,12 @@ test("general executable configuration rejects counterpart and escaping paths wi
       `${file}: ${JSON.stringify(violations, null, 2)}`,
     );
   }
-  assert.ok(
-    violations.some(({ rule }) => rule === RULES.BACKEND_REFERENCE),
-  );
+  assert.ok(violations.some(({ rule }) => rule === RULES.BACKEND_REFERENCE));
   assert.ok(violations.some(({ rule }) => rule === RULES.ESCAPING_CONFIG));
-  assert.deepEqual(await checkArchitecture(path.join(fixturesRoot, "valid")), []);
+  assert.deepEqual(
+    await checkArchitecture(path.join(fixturesRoot, "valid")),
+    [],
+  );
 });
 
 test("package executable and nested configuration strings reject counterpart or escaping source paths", async () => {
@@ -241,17 +245,17 @@ test("checker accepts only the repository and roots inside its controlled fixtur
   const counterpartRoot = path.resolve(repositoryRoot, "../garfex-platform");
 
   for (const refusedRoot of [outsideRoot, counterpartRoot]) {
-    await assert.rejects(
-      checkArchitecture(refusedRoot),
-      (error) => {
-        assert.ok(error instanceof ConfigurationError);
-        assert.match(error.message, /must be the garfex-platform-ui repository/);
-        return true;
-      },
-    );
+    await assert.rejects(checkArchitecture(refusedRoot), (error) => {
+      assert.ok(error instanceof ConfigurationError);
+      assert.match(error.message, /must be the garfex-platform-ui repository/);
+      return true;
+    });
   }
 
-  assert.deepEqual(await checkArchitecture(path.join(fixturesRoot, "valid")), []);
+  assert.deepEqual(
+    await checkArchitecture(path.join(fixturesRoot, "valid")),
+    [],
+  );
   assert.ok(
     (
       await checkArchitecture(

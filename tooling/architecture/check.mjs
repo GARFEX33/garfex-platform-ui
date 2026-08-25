@@ -14,6 +14,8 @@ export const RULES = Object.freeze({
   GIT_DEPENDENCY: "counterpart-git-dependency",
   ESCAPING_SYMLINK: "escaping-symlink",
   HEADLESS_HOST: "headless-host-dependency",
+  FRONTEND_FRAMEWORK: "frontend-framework-structure",
+  FAKE_EXTERNAL_ARTIFACT: "fake-external-artifact",
 });
 
 export class ConfigurationError extends Error {}
@@ -194,6 +196,41 @@ function sourceReferenceEscapes(root, filename, specifier) {
 function scanSource(root, filename, text, violations) {
   const normalizedFile = relativeName(root, filename);
   const isHeadless = /(^|\/)surface\//.test(normalizedFile);
+
+  if (
+    isHeadless &&
+    (/(^|\/)surface\/(?:domain|application|repositories|widgets)(?:\/|$)/i.test(
+      normalizedFile,
+    ) ||
+      /\/(?:UiPort|HostPort|GarfexSelectList)\.[^.]+$/i.test(normalizedFile))
+  ) {
+    add(
+      violations,
+      RULES.FRONTEND_FRAMEWORK,
+      root,
+      filename,
+      "generic frontend framework or domain/repository structure",
+    );
+  }
+
+  if (
+    isHeadless &&
+    (/(^|\/)surface\/.*\/(?:dtos?|schemas?|generated|backend)(?:\/|$)/i.test(
+      normalizedFile,
+    ) ||
+      /\/(?:Mock|Fake).*(?:Dto|Client|Repository)\.[^.]+$/i.test(
+        normalizedFile,
+      ))
+  ) {
+    add(
+      violations,
+      RULES.FAKE_EXTERNAL_ARTIFACT,
+      root,
+      filename,
+      "fake or backend-shaped external artifact in reusable Surface code",
+    );
+  }
+
   const references = new Set([
     ...sourceSpecifiers(text),
     ...sourceOperationalStrings(text),
@@ -229,7 +266,11 @@ function scanSource(root, filename, text, violations) {
         );
       }
     }
-    if (isHeadless && /(?:^|[\\/])(?:hosts?|pi)(?:[\\/]|$)/i.test(reference)) {
+    if (
+      isHeadless &&
+      (/^@earendil-works\/pi-(?:tui|coding-agent)(?:\/|$)/i.test(reference) ||
+        /(?:^|[\\/])(?:hosts?|pi)(?:[\\/]|$)/i.test(reference))
+    ) {
       add(
         violations,
         RULES.HEADLESS_HOST,
@@ -461,7 +502,8 @@ function counterpartPathValues(value) {
     candidates.add(token.replace(/^[=,:]+|[,]+$/g, ""));
   }
   return [...candidates].filter(
-    (candidate) => BACKEND_REFERENCE.test(candidate) || COUNTERPART.test(candidate),
+    (candidate) =>
+      BACKEND_REFERENCE.test(candidate) || COUNTERPART.test(candidate),
   );
 }
 
@@ -625,36 +667,30 @@ export async function checkArchitecture(rootArgument) {
 
       const basename = entry.name;
       const extension = path.extname(basename);
-          const generalConfig = isGeneralConfig(basename, extension);
-          const relevant =
-            SOURCE_EXTENSIONS.has(extension) ||
-            generalConfig ||
-            basename === "package.json" ||
-            /^tsconfig(?:\..+)?\.json$/.test(basename) ||
-            basename === "pnpm-workspace.yaml" ||
-            basename === "pnpm-workspace.yml" ||
-            basename === ".gitmodules" ||
-            LOCKFILES.has(basename);
-          if (!relevant) continue;
+      const generalConfig = isGeneralConfig(basename, extension);
+      const relevant =
+        SOURCE_EXTENSIONS.has(extension) ||
+        generalConfig ||
+        basename === "package.json" ||
+        /^tsconfig(?:\..+)?\.json$/.test(basename) ||
+        basename === "pnpm-workspace.yaml" ||
+        basename === "pnpm-workspace.yml" ||
+        basename === ".gitmodules" ||
+        LOCKFILES.has(basename);
+      if (!relevant) continue;
 
-          const text = await readFile(filename, "utf8");
-          if (SOURCE_EXTENSIONS.has(extension))
-            scanSource(canonicalRoot, filename, text, violations);
-          if (
-            generalConfig &&
-            basename !== "package.json" &&
-            !/^tsconfig(?:\..+)?\.json$/.test(basename) &&
-            basename !== "pnpm-workspace.yaml" &&
-            basename !== "pnpm-workspace.yml" &&
-            !LOCKFILES.has(basename)
-          )
-            scanGeneralConfig(
-              canonicalRoot,
-              filename,
-              text,
-              extension,
-              violations,
-            );
+      const text = await readFile(filename, "utf8");
+      if (SOURCE_EXTENSIONS.has(extension))
+        scanSource(canonicalRoot, filename, text, violations);
+      if (
+        generalConfig &&
+        basename !== "package.json" &&
+        !/^tsconfig(?:\..+)?\.json$/.test(basename) &&
+        basename !== "pnpm-workspace.yaml" &&
+        basename !== "pnpm-workspace.yml" &&
+        !LOCKFILES.has(basename)
+      )
+        scanGeneralConfig(canonicalRoot, filename, text, extension, violations);
       if (basename === "package.json")
         scanManifest(canonicalRoot, filename, text, violations);
       if (/^tsconfig(?:\..+)?\.json$/.test(basename))
@@ -679,8 +715,7 @@ export async function checkArchitecture(rootArgument) {
 
 function parseArguments(argv) {
   if (argv.length === 0) return { root: REPOSITORY_ROOT };
-  if (argv.length === 2 && argv[0] === "--root")
-    return { root: argv[1] };
+  if (argv.length === 2 && argv[0] === "--root") return { root: argv[1] };
   throw new ConfigurationError(
     "Usage: node tooling/architecture/check.mjs [--root <directory>]",
   );

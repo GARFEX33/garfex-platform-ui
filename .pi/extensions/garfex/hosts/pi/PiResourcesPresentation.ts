@@ -1,65 +1,40 @@
-import type { ResourcesExperience } from "../../surface/features/resources/ResourcesExperience";
-import type { ResourcesProjection } from "../../surface/features/resources/ResourcesExperienceState";
-import type { PiPresentation } from "./PiPresentation";
+import type { SelectItem } from "@earendil-works/pi-tui";
 
-const RESOURCES_MENU = [
-    "Buscar recurso",
-    "Crear recurso",
-    "Explorar recursos",
-    "Volver",
-] as const;
+import type { ResourcesProjection } from "../../surface/features/resources/ResourcesExperienceState.ts";
 
-export class PiResourcesPresentation {
-    constructor(
-        private readonly pi: PiPresentation,
-        private readonly resources: ResourcesExperience,
-    ) {}
+export type ResourcesChoice = "search" | "back";
 
-    async open(): Promise<void> {
-        this.resources.showMenu();
+export type ResourcesView = Readonly<{
+    title: string;
+    description: string;
+    hint: string;
+    items: readonly SelectItem[];
+}>;
 
-        while (true) {
-            const option = await this.pi.select(
-                "GARFEX · Recursos maestros",
-                RESOURCES_MENU,
-            );
-
-            if (!option || option === "Volver") {
-                this.resources.returnHome();
-                return;
-            }
-
-            if (option === "Buscar recurso") {
-                await this.search();
-            } else if (option === "Crear recurso") {
-                this.showUnavailable(this.resources.create());
-            } else if (option === "Explorar recursos") {
-                this.showUnavailable(this.resources.browse());
-            }
-        }
+export function resourcesView(projection: ResourcesProjection): ResourcesView {
+    if (projection.location === "search") {
+        return {
+            title: "Buscar recurso",
+            description:
+                "La búsqueda todavía no está disponible. Puedes preparar un borrador y conservarlo mientras GARFEX permanezca abierto.",
+            hint: "Escribe para preparar el borrador · Esc: volver a Recursos",
+            items: [],
+        };
     }
 
-    private async search(): Promise<void> {
-        const query = await this.pi.input(
-            "Buscar recurso",
-            "Nombre del recurso",
-        );
-
-        if (query === undefined) {
-            return;
-        }
-
-        const projection = this.resources.search(query);
-
-        this.showUnavailable(projection);
-    }
-
-    private showUnavailable(projection: ResourcesProjection): void {
-        if (projection.clientCapability.kind === "unavailable") {
-            this.pi.notify(
-                "La integración real con GARFEX aún está pendiente; no hay datos simulados.",
-                "warning",
-            );
-        }
-    }
+    return {
+        title: "Recursos maestros",
+        description:
+            "La búsqueda estará disponible próximamente. Puedes preparar y conservar un borrador.",
+        hint: "↑/↓: mover · Enter: elegir · Esc: volver a GARFEX",
+        items: [
+            {
+                value: "search",
+                label: "Preparar búsqueda",
+                description:
+                    "Escribe y conserva un borrador para usarlo más adelante.",
+            },
+            { value: "back", label: "Volver a GARFEX" },
+        ],
+    };
 }

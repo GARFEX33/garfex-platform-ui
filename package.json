@@ -1,0 +1,16 @@
+{
+  "name": "garfex-platform-ui",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.19"
+  },
+  "scripts": {
+    "test": "node --test tooling/tests/*.test.mjs .pi/extensions/garfex/**/*.test.ts",
+    "check:architecture": "node tooling/architecture/check.mjs"
+  },
+  "dependencies": {
+    "@earendil-works/pi-coding-agent": "0.84.2",
+    "@earendil-works/pi-tui": "0.84.2"
+  }
+}

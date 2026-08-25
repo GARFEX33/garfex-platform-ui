@@ -1,62 +1,41 @@
 # GARFEX Surface repository
 
-## Identity
+## Identity and authority
 
-This repository owns **GARFEX Surface**: the human-facing experience layer. It is not the GARFEX backend, a business module, an agent Harness, or a Pi extension as its architectural identity. Pi is only the current first host implementation, physically materialized under `.pi/extensions/garfex/`.
+This repository owns the human-facing **GARFEX Surface**. Pi is the current host, not the architecture. The Surface is an untrusted independent external client; read [ADR 0002](docs/decisions/0002-independent-external-client-boundary.md) before integration work.
 
-There is no selected product technical baseline: no package manifest, compiler configuration, product test runner, linter, formatter, build, or CI contract exists here. The standalone Node architecture checker is the sole narrow repository tool; it does not select any of those baselines. Do not infer or add one without an explicit decision.
+Never invent Resource data, DTOs, contracts, auth, permissions, remote state, business rules, loaders, repositories, or fake requests. Do not import backend source, schemas, generated bindings, private packages, sibling workspaces, or `@garfex/*` artifacts.
 
-## Ownership and dependency direction
+## Implementation boundaries
 
 ```text
-host presentation (currently Pi)
-        ↓
-headless Surface feature experience
-        ↓
-future narrow view of an explicitly public external contract (absent today)
-        ↓
-UI-owned adapter and GARFEX external boundary (transport undecided)
+Pi entry/composition → hosts/pi presentation → surface feature
 ```
 
-- Feature code owns host-neutral interaction intent, projections, and **Interaction State**.
-- Host presentation owns rendering, input mechanisms, accessibility realization, and physical navigation.
-- A future GARFEX client integration may own **Remote State** caching and request lifecycle state.
-- GARFEX backend modules remain authoritative for **Business State**, business rules, authorization, public business errors, and persistence.
-- This repository is an untrusted external client. Shared contractual meaning never permits shared backend implementation, source, schemas, generated code, private packages, or backend module `public.ts` imports.
-- UI-owned adapters may implement a client side only against an explicitly public, external, versioned, client-safe contract. No contract artifact or `@garfex/*` package is currently approved.
-- Semantic navigation intent belongs to headless features; physical navigation belongs to each host.
-- Composition roots only wire concrete pieces.
+- Reusable features own interaction state, projections, and semantic intents.
+- Hosts own rendering, focus, accessibility mechanics, keyboard handling, and physical navigation.
+- Navigation is not interaction. A feature may emit `return-home`; Pi decides the destination.
+- Keep Pi imports under `hosts/pi/`, plus `index.ts` and `composition/` where required to register and construct the Pi Surface.
+- Do not create `UiPort`, `HostPort`, generic widget/component APIs, frontend domain/application/repository layers, or mandatory adapter classes.
+- Add a mapping only when presentation genuinely transforms feature meaning.
 
-Only introduce capability-shaped dependency views when they derive from real GARFEX client-facing contracts. Keep them narrow and feature-oriented. Do not invent a universal `HostPort` or a generic UI port.
+## Pi UI conventions
 
-## Forbidden dependencies and authority
+[ADR 0003](docs/decisions/0003-pi-ui-kit-v1.md) is authoritative. Use one non-overlay `ctx.ui.custom` Surface and actual Pi native components. Pi UI Kit means conventions, not a library. Do not build a parallel component framework or `GarfexSelectList`.
 
-Never make the Surface:
+Keep Pi-visible product copy in Spanish and avoid architecture vocabulary in the product UI. Expose only useful, honest affordances. Essential status and navigation guidance must be textual, not color- or symbol-only. Preserve predictable back behavior and narrow-width safety.
 
-- define or duplicate backend domain entities, business DTO authority, repositories, use cases, business rules, or authorization;
-- import backend module internals, persistence, Convex internals, Temporal internals, Agent Platform internals, or Harness internals;
-- construct or trust `ActorContext`, client-supplied identity, roles, or capabilities;
-- provide fake repositories, mock business results, or a fake GARFEX client capability at runtime;
-- route deterministic CRUD, search, forms, or navigation through an LLM, Harness, or Agent Platform; or
-- make GARFEX modules depend on Pi or any Surface host;
-- require a sibling backend checkout, source/path/workspace link, Git dependency, private package, schema, or generated backend binding; or
-- import Pi/host runtime or `hosts/` code from headless `surface/` code.
+Resources Search currently captures an exact draft only. Draft survives navigation during one Surface lifetime. Cancel is not failure, execution, or clear. Empty or whitespace input has no assigned business meaning.
 
-A client-side guard may improve usability but is never authorization. Trusted actor context is server-created and the owning GARFEX module performs final authorization.
+Use one command-level recovery boundary for unexpected opening failures. Primary UX must be actionable and must not reveal sensitive technical details. TUI-only behavior must be reported honestly in other modes.
 
-## Current Resources limitation
+## Minimal tooling
 
-The Resources feature currently models only experience intent and explicitly reports that the GARFEX client capability is unavailable. Resource client contracts and Surface↔GARFEX transport do not exist here yet. Do not add Resource DTOs, backend error replicas, transport adapters, mock results, or direct backend imports to bypass that absence.
+The npm/Node baseline exists only to import Pi 0.84.2 and run native tests. Do not infer a compiler, linter, formatter, bundler, build, migration, or CI choice.
 
-## Pi host conventions
+```text
+npm test
+npm run check:architecture
+```
 
-- Keep Pi-specific types and runtime calls under `hosts/pi/` (plus the Pi entry point and composition root).
-- Pi presentation invokes headless feature operations and implements physical return/exit behavior itself.
-- Preserve all Pi-visible menu, prompt, and notification strings in Spanish.
-- A future host gets its own presentation; it does not force a universal host abstraction.
-
-## Architecture enforcement
-
-Run `node tooling/architecture/check.mjs` and `node --test tooling/tests/architecture.test.mjs`. The standard-library checker scans only this repository or an explicitly supplied fixture root and never inspects a sibling checkout. A future approved public artifact requires an explicit decision and checker change; none is allowlisted now.
-
-Read [`docs/architecture.md`](docs/architecture.md) for materialized code, [ADR 0001](docs/decisions/0001-garfex-surface-foundation.md) for the Surface foundation, and [ADR 0002](docs/decisions/0002-independent-external-client-boundary.md) for the independent external client boundary.
+Read [the architecture map](docs/architecture.md), [ADR 0001](docs/decisions/0001-garfex-surface-foundation.md), [ADR 0002](docs/decisions/0002-independent-external-client-boundary.md), and [ADR 0003](docs/decisions/0003-pi-ui-kit-v1.md) before changing boundaries.

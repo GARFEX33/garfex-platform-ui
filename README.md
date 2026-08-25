@@ -1,31 +1,32 @@
 # GARFEX Surface
 
-This repository is the human-facing **GARFEX Surface** workspace. Pi is the current first host implementation, not the product's architectural identity and not an agent Harness.
+This repository owns the human-facing **GARFEX Surface**. Pi is the first host, not the product's architectural identity.
 
-## Materialized now
+## What works now
 
-- a host-neutral Resources experience that models semantic interaction intent and an explicit client-capability-unavailable state;
-- Pi-specific menus, prompts, notifications, and physical navigation;
-- a Pi-only composition root and `/garfex` extension entry point; and
-- architecture guidance, the accepted Surface foundation decision, and the accepted independent external client boundary; and
-- a narrow standard-library architecture checker that prevents source/package/workspace linkage to backend internals.
-
-No real Resources data is shown. The GARFEX Resources client capability and Surface↔GARFEX transport are intentionally absent—not mocked. The checker does not select a product package, build, typecheck, test, lint, formatting, or CI baseline; those baselines remain undecided.
-
-## Architecture guide
-
-1. Read [`docs/architecture.md`](docs/architecture.md) for the exact implemented structure and dependency diagram.
-2. Read [ADR 0001](docs/decisions/0001-garfex-surface-foundation.md) for the Surface foundation.
-3. Read [ADR 0002](docs/decisions/0002-independent-external-client-boundary.md) for the source/package-independent external client boundary.
-4. Read [`AGENTS.md`](AGENTS.md) before extending the code.
-
-## Architecture check
-
-Run the standalone guard directly with Node:
+Run `/garfex` in Pi TUI mode to open one native, non-overlay Surface. The useful path is:
 
 ```text
-node tooling/architecture/check.mjs
-node --test tooling/tests/architecture.test.mjs
+GARFEX → Recursos maestros → Preparar búsqueda
 ```
 
-It scans only this repository (or an explicitly supplied fixture root), uses no third-party packages, and does not establish the future product tooling baseline.
+The search view preserves the exact draft while you move back and return during that Surface lifetime. It does **not** execute a search or show fabricated Resources. Escape returns predictably from Search to Resources to GARFEX, then closes.
+
+## Verify
+
+Requires Node `>=22.19` and the locked npm dependencies.
+
+```text
+npm test
+npm run check:architecture
+```
+
+The baseline exists only to load Pi 0.84.2 and run Node-native tests. It does not select a compiler, linter, formatter, bundler, or CI system.
+
+## Architecture decisions
+
+1. [`docs/architecture.md`](docs/architecture.md) — current materialized structure and review path.
+2. [ADR 0001](docs/decisions/0001-garfex-surface-foundation.md) — Surface foundation.
+3. [ADR 0002](docs/decisions/0002-independent-external-client-boundary.md) — independent external-client boundary.
+4. [ADR 0003](docs/decisions/0003-pi-ui-kit-v1.md) — Pi-native rendering and interaction conventions.
+5. [`AGENTS.md`](AGENTS.md) — contributor constraints.

@@ -1,2 +1,4 @@
-# Local Pi runtime state
+# Local tool and dependency state
 .atl/
+.codegraph/
+node_modules/

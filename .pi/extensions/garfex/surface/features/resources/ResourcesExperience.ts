@@ -1,55 +1,51 @@
-import {
-    screenForResourcesOperation,
-    type ResourcesSemanticOperation,
-} from "./ResourcesExperienceOperations";
+import type { ResourcesIntent } from "./ResourcesExperienceOperations.ts";
 import type {
-    ResourcesExperienceState,
     ResourcesProjection,
-} from "./ResourcesExperienceState";
+    ResourcesTransition,
+} from "./ResourcesExperienceState.ts";
 
-const CLIENT_CAPABILITY_UNAVAILABLE = {
-    kind: "unavailable",
-    reason: "client-contract-not-materialized",
-} as const;
+const INITIAL_PROJECTION: ResourcesProjection = {
+    location: "resources",
+    searchDraft: "",
+    availability: "search-unavailable",
+};
 
 export class ResourcesExperience {
-    private state: ResourcesExperienceState = {
-        screen: "menu",
-        query: "",
-        clientCapability: CLIENT_CAPABILITY_UNAVAILABLE,
-    };
+    private projection: ResourcesProjection = INITIAL_PROJECTION;
 
-    showMenu(): ResourcesProjection {
-        return this.apply({ kind: "show-menu" });
+    project(): ResourcesProjection {
+        return this.projection;
     }
 
-    search(query: string): ResourcesProjection {
-        return this.apply({ kind: "search", query });
+    openSearch(): ResourcesTransition {
+        return this.apply({ kind: "open-search" });
     }
 
-    create(): ResourcesProjection {
-        return this.apply({ kind: "create" });
+    changeSearchDraft(draft: string): ResourcesTransition {
+        return this.apply({ kind: "change-search-draft", draft });
     }
 
-    browse(): ResourcesProjection {
-        return this.apply({ kind: "browse" });
+    cancelSearch(): ResourcesTransition {
+        return this.apply({ kind: "cancel-search" });
     }
 
-    returnHome(): ResourcesProjection {
+    returnHome(): ResourcesTransition {
         return this.apply({ kind: "return-home" });
     }
 
-    project(): ResourcesProjection {
-        return this.state;
-    }
+    private apply(intent: ResourcesIntent): ResourcesTransition {
+        if (intent.kind === "open-search") {
+            this.projection = { ...this.projection, location: "search" };
+        } else if (intent.kind === "change-search-draft") {
+            this.projection = { ...this.projection, searchDraft: intent.draft };
+        } else if (intent.kind === "cancel-search") {
+            this.projection = { ...this.projection, location: "resources" };
+        }
 
-    private apply(operation: ResourcesSemanticOperation): ResourcesProjection {
-        this.state = {
-            screen: screenForResourcesOperation(operation),
-            query: operation.kind === "search" ? operation.query : "",
-            clientCapability: CLIENT_CAPABILITY_UNAVAILABLE,
+        return {
+            projection: this.projection,
+            effects:
+                intent.kind === "return-home" ? [{ kind: "return-home" }] : [],
         };
-
-        return this.state;
     }
 }

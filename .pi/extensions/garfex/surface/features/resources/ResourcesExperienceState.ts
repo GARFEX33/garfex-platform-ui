@@ -1,19 +1,14 @@
-export type ResourcesScreen =
-    | "menu"
-    | "search"
-    | "create"
-    | "browse"
-    | "return-home";
+export type ResourcesLocation = "resources" | "search";
 
-export type ResourcesClientCapabilityStatus = Readonly<{
-    kind: "unavailable";
-    reason: "client-contract-not-materialized";
+export type ResourcesProjection = Readonly<{
+    location: ResourcesLocation;
+    searchDraft: string;
+    availability: "search-unavailable";
 }>;
 
-export type ResourcesExperienceState = Readonly<{
-    screen: ResourcesScreen;
-    query: string;
-    clientCapability: ResourcesClientCapabilityStatus;
-}>;
+export type ResourcesEffect = Readonly<{ kind: "return-home" }>;
 
-export type ResourcesProjection = ResourcesExperienceState;
+export type ResourcesTransition = Readonly<{
+    projection: ResourcesProjection;
+    effects: readonly ResourcesEffect[];
+}>;

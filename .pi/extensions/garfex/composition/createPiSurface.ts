@@ -1,16 +1,12 @@
-import { PiMainMenu } from "../hosts/pi/PiMainMenu";
-import { PiPresentation } from "../hosts/pi/PiPresentation";
-import type { PiCommandContext } from "../hosts/pi/PiRuntime";
-import { PiResourcesPresentation } from "../hosts/pi/PiResourcesPresentation";
-import { ResourcesExperience } from "../surface/features/resources/ResourcesExperience";
+import type { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 
-export function createPiSurface(context: PiCommandContext): PiMainMenu {
-    const resources = new ResourcesExperience();
-    const piPresentation = new PiPresentation(context);
-    const resourcesPresentation = new PiResourcesPresentation(
-        piPresentation,
-        resources,
+import { GarfexSurfaceComponent } from "../hosts/pi/PiPresentation.ts";
+
+export async function openPiSurface(
+    context: ExtensionCommandContext,
+): Promise<void> {
+    await context.ui.custom<void>(
+        (tui, theme, _keybindings, done) =>
+            new GarfexSurfaceComponent(tui, theme, () => done()),
     );
-
-    return new PiMainMenu(piPresentation, resourcesPresentation);
 }

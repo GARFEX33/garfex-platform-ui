@@ -1,55 +1,57 @@
 # Materialized GARFEX Surface architecture
 
-This document describes **only what exists in this repository now**. [ADR 0001](decisions/0001-garfex-surface-foundation.md) defines the Surface foundation; [ADR 0002](decisions/0002-independent-external-client-boundary.md) defines its independent external client boundary. Accepted direction must not be mistaken for implemented integration.
+The implementation is a Pi-native Surface with reusable Resources interaction state. [ADR 0003](decisions/0003-pi-ui-kit-v1.md) owns the UI convention; ADRs [0001](decisions/0001-garfex-surface-foundation.md) and [0002](decisions/0002-independent-external-client-boundary.md) remain authoritative for the Surface and external boundary.
 
-## Current implementation
+## Review map
 
-| Area | Materialized responsibility |
+| Area | Responsibility |
 | --- | --- |
-| `surface/features/resources/` | Host-neutral Resources interaction intent, state, search draft, and projection. It preserves search input without assigning business meaning and exposes an explicit `client-contract-not-materialized` status with no business data. |
-| `hosts/pi/PiPresentation.ts` | Concrete wrapper over the current Pi command context. It is Pi-specific, not a universal host abstraction. |
-| `hosts/pi/PiResourcesPresentation.ts` | Spanish Resources rendering/input and physical return behavior. Invokes the headless Resources experience. |
-| `hosts/pi/PiMainMenu.ts` | Spanish Pi main menu and physical host navigation. |
-| `composition/createPiSurface.ts` | Constructs the concrete feature and Pi presentation objects; contains no behavior. |
-| `index.ts` | Registers the Pi `/garfex` command and starts the composed Pi Surface. |
-| `tooling/architecture/check.mjs` | Standalone Node standard-library guard for repository independence and headless dependency direction. It does not select product tooling. |
+| `surface/features/resources/` | Exact draft, Resources/Search location, semantic intents, projection, and return-home effect. No Pi dependency or business data. |
+| `hosts/pi/PiPresentation.ts` | One `ctx.ui.custom` component composed from native Pi TUI components; focus, keyboard, width safety, and physical navigation. |
+| `hosts/pi/PiResourcesPresentation.ts` | Selective Resources projection-to-Spanish-view mapping. |
+| `hosts/pi/PiMainMenu.ts` | Honest GARFEX choices for the Pi host. |
+| `composition/createPiSurface.ts` | Pi component construction at the composition edge. |
+| `index.ts` | `/garfex`, TUI gating, and the single safe recovery boundary. |
+| `tooling/architecture/check.mjs` | Repository independence plus Surface/host and anti-framework boundaries. |
 
-The headless feature preserves the search draft exactly as entered and records search and browse as separate explicit intents. It does not trim, normalize, accept, reject, or assign business meaning to empty search input while the real GARFEX client-facing contract is absent.
-
-## Implemented dependency diagram
+## State and flow
 
 ```mermaid
 flowchart TD
-    Entry["Pi extension entry\nindex.ts"] --> Composition["Pi composition\ncreatePiSurface.ts"]
-    Composition --> PiMenu["PiMainMenu"]
-    Composition --> PiResources["PiResourcesPresentation"]
-    Composition --> PiRuntime["PiPresentation"]
-    Composition --> Resources["ResourcesExperience"]
-    PiMenu --> PiResources
-    PiMenu --> PiRuntime
-    PiResources --> PiRuntime
-    PiResources --> Resources
-    PiRuntime --> PiSDK["Pi runtime types/API"]
-    Resources --> State["Resources experience state + semantic operations"]
-    Missing["GARFEX client-facing boundary\nINTENTIONALLY ABSENT"]
-    Resources -. "no dependency" .-> Missing
+    Command["/garfex"] --> Gate{"TUI mode?"}
+    Gate -->|no| Notice["Spanish mode guidance"]
+    Gate -->|yes| Custom["one non-overlay ctx.ui.custom Surface"]
+    Custom --> Home["GARFEX"]
+    Home --> Resources["Resources projection"]
+    Resources --> Search["Search draft interaction"]
+    Search -->|cancel/back| Resources
+    Resources -->|return-home effect| Home
+    Home -->|close/back| Closed["close"]
+    Pi["Pi native SelectList + Input + layout helpers"] --> Custom
+    Feature["host-neutral state + intents + projections"] --> Resources
+    Missing["GARFEX external Resource contract: absent"]
+    Feature -. "no dependency" .-> Missing
 ```
 
-Solid arrows are current source dependencies. The dotted line marks a deliberate absence, not an adapter, mock, repository, SDK, transport, or fake capability.
+Cancellation changes navigation only. It is not execution, failure, or clearing. The retained single-line Input writes the exact draft and preserves its cursor for the Surface lifetime; empty and whitespace drafts are preserved without interpretation. Search execution is absent and the view says so.
 
-## Accepted direction versus implemented pieces
+## Dependency rules
 
-The accepted direction permits future host presentations to depend on headless features and future features to consume narrow capability views derived only from an explicitly public, external, versioned, client-safe GARFEX contract. None of the following is implemented here: a GARFEX client contract, Resource DTOs, transport, authentication/login, Remote State cache, Web host, forms framework, agentic route, or Temporal integration.
-
-The Surface is an untrusted external client. Backend module `public.ts`, Convex bindings, schemas, generated code, private packages, and `@garfex/*` packages are not client contracts and are not importable. Shared contractual meaning does not imply shared implementation. UI-owned adapters may eventually implement public semantics, but no adapter, artifact, SDK, or transport is selected now.
-
-The narrow checker is materialized and scans only this repository (or an explicitly supplied fixture root):
+Allowed direction:
 
 ```text
-node tooling/architecture/check.mjs
-node --test tooling/tests/architecture.test.mjs
+Pi entry/composition → Pi presentation → reusable feature
 ```
 
-It rejects backend/source/package/workspace/Git linkage and headless-to-host imports. The default scan excludes controlled violation fixtures and ignored/generated directories. It does not inspect a sibling repository and does not select the product package/build/typecheck/test/lint/format/CI baseline.
+Reusable `surface/` code cannot import Pi packages or `hosts/`. The checker also rejects generic UI-port/component-framework structures, frontend domain/application/repository layers, and fake backend-shaped DTO/client/repository artifacts. Rules are path- and structure-oriented rather than global vocabulary bans.
 
-Backend-owned policy remains canonical in the `garfex-platform` repository. Its stable counterpart for this boundary is the **“Independent external client boundary” decision (Accepted 2026-08-24)**; no sibling filesystem checkout is assumed.
+The independent client boundary remains unchanged: no backend source, schemas, generated bindings, private packages, sibling workspace, Git dependency, invented contract, or fake Resource response.
+
+## Minimal baseline
+
+`package.json` and `package-lock.json` pin the two actual Pi 0.84.2 packages and require Node `>=22.19`. Node strips erasable TypeScript syntax and runs the tests directly. No compiler, linter, formatter, bundler, build pipeline, or CI policy is implied.
+
+```text
+npm test
+npm run check:architecture
+```

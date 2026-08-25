@@ -1,20 +1,31 @@
-export type PiNotificationType = "info" | "warning" | "error";
+import type { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 
-export interface PiCommandUi {
-    select(title: string, options: string[]): Promise<string | undefined>;
-    input(title: string, placeholder?: string): Promise<string | undefined>;
-    notify(message: string, type: PiNotificationType): void;
+export type GarfexCommandResult = "closed" | "tui-required" | "failed";
+
+export function reportTuiRequired(context: ExtensionCommandContext): void {
+    if (context.hasUI) {
+        context.ui.notify(
+            "GARFEX solo puede abrirse en una sesión interactiva. Inicia una e inténtalo de nuevo.",
+            "warning",
+        );
+        return;
+    }
+
+    process.stderr.write(
+        "GARFEX solo puede abrirse en una sesión interactiva. Inicia una e inténtalo de nuevo.\n",
+    );
 }
 
-export interface PiCommandContext {
-    ui: PiCommandUi;
-}
+export function reportSafeFailure(context: ExtensionCommandContext): void {
+    if (context.hasUI) {
+        context.ui.notify(
+            "No se pudo abrir GARFEX. Inténtalo de nuevo.",
+            "error",
+        );
+        return;
+    }
 
-export interface PiCommandRegistration {
-    description: string;
-    handler(args: string, context: PiCommandContext): void | Promise<void>;
-}
-
-export interface PiExtensionApi {
-    registerCommand(name: string, command: PiCommandRegistration): void;
+    process.stderr.write(
+        "No se pudo abrir GARFEX. Inicia una sesión interactiva e inténtalo de nuevo.\n",
+    );
 }
