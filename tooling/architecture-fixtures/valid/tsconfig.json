@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@surface/*": ["./surface/*"]
+    }
+  },
+  "references": [{ "path": "./surface" }]
+}

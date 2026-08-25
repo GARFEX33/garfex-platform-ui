@@ -1,0 +1,3 @@
+label: GARFEX Platform external client
+cache: ./generated/cache
+registry: https://registry.npmjs.org/

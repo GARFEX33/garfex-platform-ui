@@ -1,0 +1,4 @@
+lockfileVersion: "9.0"
+packages:
+  backend-counterpart@git+https://github.com/garfex/garfex-platform.git:
+    resolution: { repo: https://github.com/garfex/garfex-platform.git }

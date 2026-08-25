@@ -1,0 +1,6 @@
+packages:
+  - "../../../../garfex-platform/packages/*"
+
+blockExoticSubdeps: true
+minimumReleaseAge: 10080
+trustPolicy: no-downgrade

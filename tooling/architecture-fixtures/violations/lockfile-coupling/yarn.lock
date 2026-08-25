@@ -1,0 +1,6 @@
+"@garfex/backend@git+https://github.com/example/backend-client.git":
+  version "1.0.0"
+  resolved "git+https://github.com/example/backend-client.git#main"
+
+"local-backend@link:../../../../garfex-platform/apps/backend":
+  version "0.0.0-use.local"

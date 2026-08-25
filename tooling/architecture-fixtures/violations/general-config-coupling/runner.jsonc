@@ -1,0 +1,4 @@
+{
+  // Executable configuration may not enter the backend counterpart.
+  "command": "node ../../garfex-platform/apps/backend/start.mjs"
+}

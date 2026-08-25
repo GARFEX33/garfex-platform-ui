@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "external-workspace": "workspace:../../../../../../external-workspace"
+  }
+}
