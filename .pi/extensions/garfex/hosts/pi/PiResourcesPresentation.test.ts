@@ -15,7 +15,11 @@ test("search presentation is honest, actionable, and free of execution claims", 
     assert.match(view.description, /no está disponible/i);
     assert.match(view.description, /conserva/i);
     assert.doesNotMatch(view.description, /resultado|completad|ejecutad/i);
-    assert.match(view.hint, /Esc/);
+    assert.deepEqual(view.hint, {
+        kind: "search",
+        typing: "Escribe para preparar el borrador",
+        cancel: "volver a Recursos",
+    });
 });
 
 test("resource menu exposes only useful honest affordances", () => {
@@ -24,6 +28,12 @@ test("resource menu exposes only useful honest affordances", () => {
         view.items.map(({ value }) => value),
         ["search", "back"],
     );
+    assert.deepEqual(view.hint, {
+        kind: "menu",
+        movement: "mover",
+        confirm: "elegir",
+        cancel: "volver a GARFEX",
+    });
     assert.doesNotMatch(
         JSON.stringify(view),
         /proveedor|configuración|crear|explorar/i,

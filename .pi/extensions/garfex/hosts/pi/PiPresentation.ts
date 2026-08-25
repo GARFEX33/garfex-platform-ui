@@ -1,14 +1,15 @@
 import {
     DynamicBorder,
     getSelectListTheme,
+    keyHint,
+    keyText,
+    type KeybindingsManager,
     type Theme,
 } from "@earendil-works/pi-coding-agent";
 import {
     Box,
     Container,
     Input,
-    Key,
-    matchesKey,
     SelectList,
     Spacer,
     Text,
@@ -23,10 +24,50 @@ import { GARFEX_HOME_ITEMS, type GarfexHomeChoice } from "./PiMainMenu.ts";
 import {
     resourcesView,
     type ResourcesChoice,
+    type ResourcesHint,
 } from "./PiResourcesPresentation.ts";
 
 type SurfaceLocation = "home" | "resources" | "search";
 type SurfaceChoice = GarfexHomeChoice | ResourcesChoice;
+type SelectAction =
+    | "tui.select.up"
+    | "tui.select.down"
+    | "tui.select.confirm"
+    | "tui.select.cancel";
+
+function configuredKeyText(
+    keybindings: KeybindingsManager,
+    action: SelectAction,
+): string {
+    return keybindings.getKeys(action).length > 0 ? keyText(action) : "";
+}
+
+function configuredKeyHint(
+    keybindings: KeybindingsManager,
+    action: SelectAction,
+    description: string,
+): string {
+    return keybindings.getKeys(action).length > 0
+        ? keyHint(action, description)
+        : "";
+}
+
+function joinGuidance(fragments: readonly string[]): string {
+    return fragments.filter((fragment) => fragment.length > 0).join(" · ");
+}
+
+function movementGuidance(
+    keybindings: KeybindingsManager,
+    description: string,
+): string {
+    const keys = [
+        configuredKeyText(keybindings, "tui.select.up"),
+        configuredKeyText(keybindings, "tui.select.down"),
+    ]
+        .filter((key) => key.length > 0)
+        .join("/");
+    return keys.length > 0 ? `${keys}: ${description}` : "";
+}
 
 export class GarfexSurfaceComponent implements Component, Focusable {
     focused = false;
@@ -40,10 +81,12 @@ export class GarfexSurfaceComponent implements Component, Focusable {
     constructor(
         privateTui: TUI,
         privateTheme: Theme,
+        privateKeybindings: KeybindingsManager,
         privateDone: () => void,
     ) {
         this.tui = privateTui;
         this.theme = privateTheme;
+        this.keybindings = privateKeybindings;
         this.done = privateDone;
         this.searchInput.onEscape = () => this.goBack();
         this.rebuild();
@@ -51,6 +94,7 @@ export class GarfexSurfaceComponent implements Component, Focusable {
 
     private readonly tui: TUI;
     private readonly theme: Theme;
+    private readonly keybindings: KeybindingsManager;
     private readonly done: () => void;
 
     currentLocation(): SurfaceLocation {
@@ -84,7 +128,7 @@ export class GarfexSurfaceComponent implements Component, Focusable {
     }
 
     handleInput(data: string): void {
-        if (matchesKey(data, Key.escape)) {
+        if (this.keybindings.matches(data, "tui.select.cancel")) {
             this.goBack();
             return;
         }
@@ -127,7 +171,9 @@ export class GarfexSurfaceComponent implements Component, Focusable {
 
     private returnToHome(): void {
         const transition = this.resources.returnHome();
-        if (transition.effects.some((effect) => effect.kind === "return-home")) {
+        if (
+            transition.effects.some((effect) => effect.kind === "return-home")
+        ) {
             this.location = "home";
             this.rebuild();
         }
@@ -161,9 +207,7 @@ export class GarfexSurfaceComponent implements Component, Focusable {
 
     private buildHome(content: Box): void {
         content.addChild(new Text(this.theme.bold("Inicio"), 0, 0));
-        content.addChild(
-            new Text("Elige una opción disponible.", 0, 0),
-        );
+        content.addChild(new Text("Elige una opción disponible.", 0, 0));
         content.addChild(new Spacer(1));
 
         const list = this.createList(GARFEX_HOME_ITEMS);
@@ -173,14 +217,12 @@ export class GarfexSurfaceComponent implements Component, Focusable {
         content.addChild(new Spacer(1));
         content.addChild(
             new Text(
-                this.theme.fg(
-                    "muted",
-                    "↑/↓: mover · Enter: elegir · Esc: cerrar GARFEX",
-                ),
+                this.theme.fg("muted", this.selectionGuidance("cerrar GARFEX")),
                 0,
                 0,
             ),
         );
+
         this.active = list;
     }
 
@@ -193,26 +235,78 @@ export class GarfexSurfaceComponent implements Component, Focusable {
 
         if (projection.location === "search") {
             this.searchInput.focused = this.focused;
-            content.addChild(new Text("Borrador de búsqueda", 0, 0));
+            content.addChild(
+                new Text("Campo activo: borrador de búsqueda", 0, 0),
+            );
             content.addChild(this.searchInput);
+
             this.active = this.searchInput;
         } else {
             const list = this.createList([...view.items]);
-            list.onSelect = (item) => this.choose(item.value as ResourcesChoice);
+            list.onSelect = (item) =>
+                this.choose(item.value as ResourcesChoice);
             list.onCancel = () => this.returnToHome();
             content.addChild(list);
             this.active = list;
         }
 
         content.addChild(new Spacer(1));
-        content.addChild(new Text(this.theme.fg("muted", view.hint), 0, 0));
+        content.addChild(
+            new Text(
+                this.theme.fg("muted", this.resourcesGuidance(view.hint)),
+                0,
+                0,
+            ),
+        );
+    }
+
+    private selectionGuidance(
+        cancelDescription: string,
+        movementDescription = "mover",
+        confirmDescription = "elegir",
+    ): string {
+        return joinGuidance([
+            movementGuidance(this.keybindings, movementDescription),
+            configuredKeyHint(
+                this.keybindings,
+                "tui.select.confirm",
+                confirmDescription,
+            ),
+            configuredKeyHint(
+                this.keybindings,
+                "tui.select.cancel",
+                cancelDescription,
+            ),
+        ]);
+    }
+
+    private resourcesGuidance(hint: ResourcesHint): string {
+        if (hint.kind === "search") {
+            return joinGuidance([
+                hint.typing,
+                configuredKeyHint(
+                    this.keybindings,
+                    "tui.select.cancel",
+                    hint.cancel,
+                ),
+            ]);
+        }
+        return this.selectionGuidance(hint.cancel, hint.movement, hint.confirm);
     }
 
     private createList(items: typeof GARFEX_HOME_ITEMS): SelectList {
-        return new SelectList(items.map((item) => ({ ...item })), items.length, getSelectListTheme(), {
-            minPrimaryColumnWidth: 1,
-            truncatePrimary: ({ text, maxWidth }) =>
-                truncateToWidth(text, Math.max(1, maxWidth)),
-        });
+        return new SelectList(
+            items.map((item) => ({ ...item })),
+            items.length,
+            getSelectListTheme(),
+            {
+                truncatePrimary: ({ text, maxWidth, isSelected }) =>
+                    truncateToWidth(
+                        isSelected ? `Activa: ${text}` : text,
+                        Math.max(1, maxWidth),
+                        "",
+                    ),
+            },
+        );
     }
 }

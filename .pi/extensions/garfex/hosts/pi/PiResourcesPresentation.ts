@@ -4,10 +4,23 @@ import type { ResourcesProjection } from "../../surface/features/resources/Resou
 
 export type ResourcesChoice = "search" | "back";
 
+export type ResourcesHint =
+    | Readonly<{
+          kind: "search";
+          typing: string;
+          cancel: string;
+      }>
+    | Readonly<{
+          kind: "menu";
+          movement: string;
+          confirm: string;
+          cancel: string;
+      }>;
+
 export type ResourcesView = Readonly<{
     title: string;
     description: string;
-    hint: string;
+    hint: ResourcesHint;
     items: readonly SelectItem[];
 }>;
 
@@ -17,7 +30,11 @@ export function resourcesView(projection: ResourcesProjection): ResourcesView {
             title: "Buscar recurso",
             description:
                 "La búsqueda todavía no está disponible. Puedes preparar un borrador y conservarlo mientras GARFEX permanezca abierto.",
-            hint: "Escribe para preparar el borrador · Esc: volver a Recursos",
+            hint: {
+                kind: "search",
+                typing: "Escribe para preparar el borrador",
+                cancel: "volver a Recursos",
+            },
             items: [],
         };
     }
@@ -26,7 +43,12 @@ export function resourcesView(projection: ResourcesProjection): ResourcesView {
         title: "Recursos maestros",
         description:
             "La búsqueda estará disponible próximamente. Puedes preparar y conservar un borrador.",
-        hint: "↑/↓: mover · Enter: elegir · Esc: volver a GARFEX",
+        hint: {
+            kind: "menu",
+            movement: "mover",
+            confirm: "elegir",
+            cancel: "volver a GARFEX",
+        },
         items: [
             {
                 value: "search",
