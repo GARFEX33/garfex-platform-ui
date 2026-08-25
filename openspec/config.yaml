@@ -1,0 +1,77 @@
+schema: spec-driven
+
+context: |
+  Project: garfex-platform-ui, the GARFEX Surface repository.
+  Stack: Node >=22.19 with npm, native ESM, Pi 0.84.2 packages, Node's native test runner, and erasable TypeScript syntax executed directly by Node. The repository has no selected compiler, linter, formatter, bundler, build pipeline, or CI contract.
+  Architecture: This repository owns the human-facing GARFEX Surface; Pi is the only current UI host. Pi native SelectList, Input, layout, text, border, keyboard, focus, and width behavior are the rendering system. There is no parallel GARFEX design system or component library, generic UiPort/HostPort, frontend domain/application/repository layer, or fake client contract, data, authentication, authorization, or capability.
+  Boundaries: Preserve the direction Pi entry/composition -> Pi presentation -> reusable Surface feature. Reusable features own interaction state, projections, and semantic intents; hosts own rendering and physical navigation. Existing ADRs and AGENTS.md are authoritative. Do not import backend source, schemas, generated bindings, private packages, sibling workspaces, or @garfex/* artifacts.
+  Product conventions: Product-visible copy is Spanish. Affordances must be honest, status and navigation guidance must remain textual, and the current retained search draft, predictable back behavior, and command-level safe recovery are part of the existing baseline. This SDD iteration must address only currently demonstrated gaps and must not rematerialize the existing GARFEX Pi UI Kit v1 foundation.
+  Verification: npm test; npm run check:architecture. The primary test command runs Node's native node:test runner over tooling tests and Pi Surface TypeScript tests. The architecture command runs the repository's Node standard-library independence and boundary checker.
+  SDD preflight: execution_mode=auto; artifact_store=both (OpenSpec + Engram); delivery_strategy=ask-on-risk; review_budget_changed_lines=400.
+  Initialization scope: establish project context only. Do not create an active change or begin explore, proposal, spec, design, or tasks artifacts.
+
+strict_tdd: true
+
+rules:
+  proposal:
+    require_problem_statement: true
+    guidelines:
+      - Identify only a demonstrated current gap, with explicit scope, non-goals, risks, and rollback boundaries.
+      - Preserve the existing Surface architecture and avoid speculative capabilities or framework abstractions.
+  spec:
+    require_acceptance_criteria: true
+    guidelines:
+      - Define observable behavior and scenarios without inventing GARFEX client contracts, data, auth, capabilities, or business rules.
+      - Keep product-visible behavior and copy consistent with the Spanish Pi Surface conventions.
+  design:
+    require_tradeoffs: true
+    guidelines:
+      - Prefer Pi-native components and the established host/feature responsibility split.
+      - Record architecture impact and tradeoffs against ADR 0001, ADR 0002, ADR 0003, and AGENTS.md.
+  tasks:
+    protect_review_workload: true
+    guidelines:
+      - Order work as strict TDD slices where tests exist.
+      - Keep the review workload within the 400 changed-line budget or escalate according to ask-on-risk delivery policy.
+  apply:
+    tdd: true
+    test_command: "npm test"
+    guidelines:
+      - Preserve unrelated user changes and run the architecture check for boundary-sensitive edits.
+  verify:
+    test_command: "npm test"
+    architecture_command: "npm run check:architecture"
+    build_command: ""
+    coverage_threshold: 0
+  archive:
+    - Preserve an auditable record of deviations, follow-up work, and unexecuted checks.
+
+testing:
+  detected: "2026-08-25"
+  runner:
+    command: "npm test"
+    framework: "Node.js native node:test runner"
+  architecture:
+    command: "npm run check:architecture"
+    framework: "Node.js standard-library architecture checker"
+  layers:
+    native_tests:
+      available: true
+      tool: "npm test"
+      note: "Tooling architecture tests and Pi Surface tests run directly without a separate test framework package."
+  coverage:
+    available: false
+    note: "No coverage command is selected by the repository."
+  quality:
+    compiler_or_type_checker:
+      available: false
+      note: "No compiler or standalone type-check command is selected; Node executes erasable TypeScript syntax directly."
+    linter:
+      available: false
+      note: "No linter is selected."
+    formatter:
+      available: false
+      note: "No formatter is selected."
+    build:
+      available: false
+      note: "No build command is selected."
