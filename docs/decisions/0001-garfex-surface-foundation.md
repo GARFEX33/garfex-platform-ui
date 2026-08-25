@@ -7,12 +7,11 @@
 
 GARFEX needs a human-facing Surface that can support multiple hosts without moving backend authority into frontend code. The repository previously looked like a Pi extension prototype with a duplicated Resource model, repository/use-case abstractions, and runtime mock data. That shape falsely implied business and integration authority.
 
-This decision establishes the enduring UI-owned foundation. Pi is the current first host implementation only. The physical code being under `.pi/extensions/garfex/` does **not** close the cross-repository decision about the long-term physical location of Pi code.
+This decision establishes the enduring UI-owned foundation. Pi is the current first host implementation only. The physical code being under `.pi/extensions/garfex/` does **not** close the decision about the long-term physical location of Pi code.
 
-Backend-owned policy stays canonical in:
+[ADR 0002](0002-independent-external-client-boundary.md) supersedes any reading of this ADR that permits backend `public.ts` imports, backend-owned shared implementation, or sibling filesystem/source linkage. This ADR remains authoritative for the Surface foundation. Under ADR 0002, the physical-location question cannot be resolved by source-linking into `garfex-platform`.
 
-- [Surface/UI and Harness boundary](../../../garfex-platform/docs/surface-ui-harness-boundary.md)
-- [Authentication and authorization boundary](../../../garfex-platform/docs/auth-boundary.md)
+Backend-owned policy stays canonical in the `garfex-platform` repository. The stable counterpart for the external boundary is its **“Independent external client boundary” decision (Accepted 2026-08-24)**; this repository does not depend on relative sibling documentation paths.
 
 ## Decision
 
@@ -41,7 +40,7 @@ Derived display state should be projected rather than duplicated. State shared b
 
 The Resources feature currently models frontend experience only. It may expose semantic search, create, browse, and return-home intent and an explicit client-capability-unavailable status. It must not define Resource business DTOs, backend/domain entities, backend errors, repositories, use cases, transport/SDK/Convex adapters, `ActorContext`, authorization, or fake results.
 
-Future external dependencies must be **capability-shaped, narrow dependency views** derived from real GARFEX client-facing contracts. The Surface may narrow a real contract for a feature; it may not invent an interface and present it as GARFEX authority. Until the real boundary exists, absence is represented explicitly rather than mocked.
+Future external dependencies must be **capability-shaped, narrow dependency views** derived from an explicitly public, external, versioned, client-safe GARFEX contract. The Surface may narrow public semantics for a feature through a UI-owned adapter; it may not import backend module `public.ts`, backend source, schemas, generated bindings, private packages, or an implicitly assumed `@garfex/client`. Until the real boundary exists, absence is represented explicitly rather than mocked.
 
 There is no duplicated backend/domain/repository authority in this repository. Convex or any persistence technology is not a Surface contract.
 
@@ -76,9 +75,9 @@ Allowed direction:
 ```text
 host presentation
     -> headless Surface feature
-    -> future narrow view of a real GARFEX client-facing contract
-    -> client transport/composition edge
-    -> backend-owned public application contract
+    -> future narrow view of an explicitly public external contract
+    -> UI-owned client adapter and transport/composition edge
+    -> GARFEX external client-facing boundary
 ```
 
 Composition may know concrete hosts and features but only wires them. Shared code is admitted only after repeated, stable Surface semantics are demonstrated. `shared/` must not become a dumping ground, a parallel domain, a universal host layer, or a home for speculative DTOs. Prefer feature ownership and host-local duplication until the common concept is proven.
@@ -127,7 +126,7 @@ This ADR selects no login UX, identity provider, productive authentication strat
 - Real Resource behavior cannot proceed until client-facing contracts and transport are selected and materialized.
 - Multiple state categories and error categories require deliberate mapping at future integration edges.
 - Each host must implement and verify its own physical navigation and accessibility realization.
-- Deferred tooling means dependency rules rely on review until enforcement is explicitly selected.
+- The narrow standard-library architecture checker enforces selected dependency rules, while product package/build/test/lint/CI tooling remains undecided.
 
 ## Open decisions
 
@@ -141,11 +140,11 @@ This ADR deliberately leaves all of the following open:
 - Remote State/cache/request library and synchronization policy;
 - forms library, schema/validation library, and contract-driven constraint mechanism;
 - routing/navigation libraries, localization framework, styling/design system, telemetry, logging, and diagnostics;
-- architecture enforcement tooling and exact dependency checks;
+- any architecture enforcement beyond the materialized narrow repository-independence and headless dependency checker;
 - detailed accessibility test tooling and host-specific acceptance criteria;
 - first real Harness and its repository/location;
 - Agent Platform internals, GARFEX-controlled agent capability contracts, tools, model/provider, approval UX, execution, event transport, and observability;
 - Temporal-facing public status/cancellation contracts and their UI semantics; and
 - the cross-repository physical location of Pi Surface code.
 
-The current physical Pi code location in this repository is an implementation fact, not resolution of the final cross-repository location decision.
+The current physical Pi code location in this repository is an implementation fact, not resolution of the final physical-location decision. ADR 0002 prohibits resolving that decision through source/path/workspace linkage into `garfex-platform`.

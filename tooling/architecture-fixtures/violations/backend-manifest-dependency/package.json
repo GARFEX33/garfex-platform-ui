@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "garfex-platform": "file:../../../../garfex-platform",
+    "external-local": "link:../../../../external-local"
+  },
+  "scripts": {
+    "backend": "node ../../../../garfex-platform/apps/backend/start.mjs",
+    "external": "node ../../../../external-local/tool.mjs"
+  },
+  "tooling": {
+    "resourceMasterConfig": "../../../../resource-master/internals/config.json"
+  }
+}

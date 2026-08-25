@@ -1,0 +1,6 @@
+{
+  "description": "GARFEX Platform external client fixture",
+  "dependencies": {
+    "left-pad": "1.3.0"
+  }
+}

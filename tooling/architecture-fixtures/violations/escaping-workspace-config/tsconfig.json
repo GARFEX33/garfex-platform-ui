@@ -1,0 +1,9 @@
+{
+  "extends": "../../../../garfex-platform/tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "backend/*": ["../../../../garfex-platform/apps/backend/*"]
+    }
+  },
+  "references": [{ "path": "../../../../garfex-platform" }]
+}

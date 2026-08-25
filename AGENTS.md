@@ -4,7 +4,7 @@
 
 This repository owns **GARFEX Surface**: the human-facing experience layer. It is not the GARFEX backend, a business module, an agent Harness, or a Pi extension as its architectural identity. Pi is only the current first host implementation, physically materialized under `.pi/extensions/garfex/`.
 
-There is no selected technical baseline or repository tooling: no package manifest, compiler configuration, test runner, linter, formatter, build, or CI contract exists here. Do not infer or add one without an explicit decision.
+There is no selected product technical baseline: no package manifest, compiler configuration, product test runner, linter, formatter, build, or CI contract exists here. The standalone Node architecture checker is the sole narrow repository tool; it does not select any of those baselines. Do not infer or add one without an explicit decision.
 
 ## Ownership and dependency direction
 
@@ -13,15 +13,17 @@ host presentation (currently Pi)
         ↓
 headless Surface feature experience
         ↓
-future narrow GARFEX client-facing capability contracts (absent today)
+future narrow view of an explicitly public external contract (absent today)
         ↓
-GARFEX transport/composition edge and backend-owned public contracts
+UI-owned adapter and GARFEX external boundary (transport undecided)
 ```
 
 - Feature code owns host-neutral interaction intent, projections, and **Interaction State**.
 - Host presentation owns rendering, input mechanisms, accessibility realization, and physical navigation.
 - A future GARFEX client integration may own **Remote State** caching and request lifecycle state.
 - GARFEX backend modules remain authoritative for **Business State**, business rules, authorization, public business errors, and persistence.
+- This repository is an untrusted external client. Shared contractual meaning never permits shared backend implementation, source, schemas, generated code, private packages, or backend module `public.ts` imports.
+- UI-owned adapters may implement a client side only against an explicitly public, external, versioned, client-safe contract. No contract artifact or `@garfex/*` package is currently approved.
 - Semantic navigation intent belongs to headless features; physical navigation belongs to each host.
 - Composition roots only wire concrete pieces.
 
@@ -36,7 +38,9 @@ Never make the Surface:
 - construct or trust `ActorContext`, client-supplied identity, roles, or capabilities;
 - provide fake repositories, mock business results, or a fake GARFEX client capability at runtime;
 - route deterministic CRUD, search, forms, or navigation through an LLM, Harness, or Agent Platform; or
-- make GARFEX modules depend on Pi or any Surface host.
+- make GARFEX modules depend on Pi or any Surface host;
+- require a sibling backend checkout, source/path/workspace link, Git dependency, private package, schema, or generated backend binding; or
+- import Pi/host runtime or `hosts/` code from headless `surface/` code.
 
 A client-side guard may improve usability but is never authorization. Trusted actor context is server-created and the owning GARFEX module performs final authorization.
 
@@ -51,4 +55,8 @@ The Resources feature currently models only experience intent and explicitly rep
 - Preserve all Pi-visible menu, prompt, and notification strings in Spanish.
 - A future host gets its own presentation; it does not force a universal host abstraction.
 
-Read [`docs/architecture.md`](docs/architecture.md) for materialized code and [`docs/decisions/0001-garfex-surface-foundation.md`](docs/decisions/0001-garfex-surface-foundation.md) for accepted direction and open decisions.
+## Architecture enforcement
+
+Run `node tooling/architecture/check.mjs` and `node --test tooling/tests/architecture.test.mjs`. The standard-library checker scans only this repository or an explicitly supplied fixture root and never inspects a sibling checkout. A future approved public artifact requires an explicit decision and checker change; none is allowlisted now.
+
+Read [`docs/architecture.md`](docs/architecture.md) for materialized code, [ADR 0001](docs/decisions/0001-garfex-surface-foundation.md) for the Surface foundation, and [ADR 0002](docs/decisions/0002-independent-external-client-boundary.md) for the independent external client boundary.

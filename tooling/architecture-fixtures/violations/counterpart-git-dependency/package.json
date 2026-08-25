@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "backend-counterpart": "git+https://github.com/garfex/garfex-platform.git"
+  }
+}

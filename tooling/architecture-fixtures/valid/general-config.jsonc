@@ -1,0 +1,6 @@
+{
+  // Prose labels and registry package names are not filesystem coupling.
+  "description": "garfex-platform is a separately deployed product",
+  "registry": "https://registry.npmjs.org/garfex-platform",
+  "outputDirectory": "./generated"
+}
